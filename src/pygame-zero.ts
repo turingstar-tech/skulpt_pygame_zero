@@ -221,7 +221,7 @@ window.$builtinmodule = function () {
                   positionHandlers
                 )) {
                   // 首先检查jsKwa是否有这个属性
-                  if (jsKwa[posType] !== undefined) {
+                  if (jsKwa?.[posType] !== undefined) {
                     // 获取值
                     const pyValue = jsKwa[posType];
                     // 直接检查是否是数组或可以直接使用的值
@@ -247,30 +247,6 @@ window.$builtinmodule = function () {
                     positionApplied = true;
                     break;
                   }
-                  // // 如果jsKwa中没找到，但原始kwa存在这个属性
-                  // else if (kwa && kwa.entries && kwa.entries[posType]) {
-                  //   // 获取Python对象
-                  //   const pyValue = kwa.entries[posType].rhs;
-                  //   // 检查是否是Python元组或列表
-                  //   if (Sk.builtin.checkSequence(pyValue)) {
-                  //     // 正确转换为JavaScript数组
-                  //     const jsArray = [];
-                  //     const iterator = Sk.abstr.iter(pyValue);
-                  //     let item;
-                  //     while (
-                  //       (item = Sk.abstr.iternext(iterator, false)) !==
-                  //       undefined
-                  //     ) {
-                  //       jsArray.push(Sk.ffi.remapToJs(item));
-                  //     }
-                  //     handler(jsArray);
-                  //   } else {
-                  //     // 其他类型的值照常处理
-                  //     handler(Sk.ffi.remapToJs(pyValue));
-                  //   }
-                  //   positionApplied = true;
-                  //   break;
-                  // }
                 }
 
                 // 向后兼容：如果没有设置任何位置属性，则检查位置参数
