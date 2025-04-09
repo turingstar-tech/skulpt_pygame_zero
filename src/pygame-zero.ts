@@ -46,6 +46,7 @@ loader.pre((resource, next) => {
 });
 let width = 500;
 let height = 400;
+
 if (window.PyGameZero.container) {
   width = window.PyGameZero.container.offsetWidth;
   height = window.PyGameZero.container.offsetHeight;
@@ -61,7 +62,6 @@ window.PyGameZero.container.appendChild(app.view);
 const { transX, transY, transPos, transColor } = translateTools(app);
 window.$builtinmodule = function () {
   const mod: any = { __name__: new Sk.builtin.str('pygame-zero') };
-
   mod.WIDTH = Sk.ffi.remapToPy(app.view.width);
   mod.HEIGHT = Sk.ffi.remapToPy(app.view.height);
 
@@ -783,6 +783,19 @@ window.$builtinmodule = function () {
 
   // 主循环
   app.ticker.add((delta) => {
+    if (Sk.globals && Sk.globals.WIDTH && Sk.globals.HEIGHT) {
+      const newWidth = Sk.ffi.remapToJs(Sk.globals.WIDTH);
+      const newHeight = Sk.ffi.remapToJs(Sk.globals.HEIGHT);
+
+      // 如果尺寸发生变化，调整应用和容器
+      if (newWidth !== app.view.width || newHeight !== app.view.height) {
+        app.renderer.resize(newWidth, newHeight);
+        if (window.PyGameZero.container) {
+          window.PyGameZero.container.style.width = newWidth + 'px';
+          window.PyGameZero.container.style.height = newHeight + 'px';
+        }
+      }
+    }
     Sk.globals.draw && Sk.misceval.callsimAsync(null, Sk.globals.draw);
     Sk.globals.update && Sk.misceval.callsimAsync(null, Sk.globals.update);
   });
