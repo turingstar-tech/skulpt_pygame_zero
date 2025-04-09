@@ -1,24 +1,57 @@
-import pgzrun # 导入游戏库
-WIDTH = 400
-HEIGHT = 400
-x = WIDTH/2   # 小球的x坐标，初始化在窗口中间
-y = HEIGHT/2  # 小球的y坐标，初始化在窗口中间
-speed_x = 3   # 小球x方向的速度
-speed_y = 5   # 小球y方向的速度
-r = 30        # 小球的半径
+from pgzrun import *
 
-def draw():   # 绘制模块，每帧重复执行
-    screen.fill('white')  # 白色背景
-    # 绘制一个填充圆，坐标(x,y)，半径r，红色
-    screen.draw.filled_circle((x, y), r, 'red')
+# 设置窗口大小
+WIDTH = 800
+HEIGHT = 600
 
-def update(): # 更新模块，每帧重复操作
-    global x,y,speed_x,speed_y # 要修改的变量在这里说明下
-    x = x+speed_x   # 利用x方向速度更新x坐标
-    y = y+speed_y   # 利用y方向速度更新y坐标
-    if x >= WIDTH-r or x <= r:  # 当小球碰到左右边界时
-        speed_x = -speed_x       # x方向速度反转
-    if y >= HEIGHT-r or y <= r: # 当小球碰到上下边界时
-        speed_y = -speed_y       # y方向速度反转
+# 创建一个小球对象
+ball = Actor('https://static.codeasily.net/blogs/pig1.png', center=(WIDTH // 2, HEIGHT // 2))
+ball.speed_x = 0  # 水平速度
+ball.speed_y = 0  # 垂直速度
 
-pgzrun.go()   # 开始执行游戏
+# 设置小球的速度
+BALL_SPEED = 5
+
+def draw():
+    """绘制游戏画面"""
+    screen.fill((0, 0, 0))  # 清空屏幕，填充黑色
+    ball.draw()  # 绘制小球
+
+def update():
+    """更新游戏状态"""
+    # 如果球静止，给它一个初始速度
+    if ball.speed_x == 0 and ball.speed_y == 0:
+        ball.speed_x = BALL_SPEED
+        ball.speed_y = BALL_SPEED
+
+    # 更新小球的位置
+    ball.x += ball.speed_x
+    ball.y += ball.speed_y
+
+    # 检查边界碰撞
+    if ball.x < 0 or ball.x > WIDTH:
+        ball.speed_x = -ball.speed_x  # 反弹
+    if ball.y < 0 or ball.y > HEIGHT:
+        ball.speed_y = -ball.speed_y  # 反弹
+
+def on_key_down(key):
+    """处理键盘按下事件"""
+    global ball
+    if key == keys.LEFT:
+        ball.speed_x = -BALL_SPEED
+    elif key == keys.RIGHT:
+        ball.speed_x = BALL_SPEED
+    elif key == keys.UP:
+        ball.speed_y = -BALL_SPEED
+    elif key == keys.DOWN:
+        ball.speed_y = BALL_SPEED
+
+def on_key_up(key):
+    """处理键盘释放事件"""
+    if key in (keys.LEFT, keys.RIGHT):
+        ball.speed_x = 0
+    elif key in (keys.UP, keys.DOWN):
+        ball.speed_y = 0
+
+# 运行游戏
+go()

@@ -69,24 +69,228 @@ window.$builtinmodule = function () {
   mod.Actor = Sk.misceval.buildClass(
     mod,
     function ($gbl, $loc) {
-      $loc.__init__ = new Sk.builtin.func(function (self, actorName, pos) {
-        return new Sk.misceval.promiseToSuspension(
-          new Promise(function (resolve) {
-            actorName = Sk.ffi.remapToJs(actorName);
-            pos = Sk.ffi.remapToJs(pos) || [];
-            textureRecources(actorName).then(function (texture) {
-              const sprite = new Sprite(texture);
-              sprite.zOrder = 1;
-              self.sprite = sprite;
-              self.sprite.anchor.set(0.5);
-              self.sprite.x = transX(pos[0] || 0);
-              self.sprite.y = transY(pos[1] || 0);
-              self.actorName = actorName;
-              resolve(void 0);
-            });
-          })
-        );
-      });
+      $loc.__init__ = new Sk.builtin.func(
+        genkwaFunc(function (args, kwa) {
+          return new Sk.misceval.promiseToSuspension(
+            new Promise(function (resolve) {
+              const [self, actorName] = args;
+              const jsActorName = Sk.ffi.remapToJs(actorName);
+              const jsKwa = Sk.ffi.remapToJs(kwa) || {};
+              textureRecources(jsActorName).then(function (texture) {
+                const sprite = new Sprite(texture);
+                sprite.zOrder = 1;
+                self.sprite = sprite;
+
+                // 默认锚点为中心
+                self.sprite.anchor.set(0.5);
+
+                // 处理各种定位选项
+                const positionHandlers = {
+                  pos: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  topleft: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0, 0);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  topright: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(1, 0);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  bottomleft: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0, 1);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  bottomright: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(1, 1);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  midtop: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0.5, 0);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  midleft: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0, 0.5);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  midright: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(1, 0.5);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  midbottom: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0.5, 1);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                  center: (value) => {
+                    let x = 0,
+                      y = 0;
+                    if (Array.isArray(value)) {
+                      [x, y] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                      x = value.x || 0;
+                      y = value.y || 0;
+                    }
+                    self.sprite.anchor.set(0.5, 0.5);
+                    self.sprite.x = transX(x);
+                    self.sprite.y = transY(y);
+                  },
+                };
+                let positionApplied = false;
+                for (const [posType, handler] of Object.entries(
+                  positionHandlers
+                )) {
+                  // 首先检查jsKwa是否有这个属性
+                  if (jsKwa[posType] !== undefined) {
+                    // 获取值
+                    const pyValue = jsKwa[posType];
+                    // 直接检查是否是数组或可以直接使用的值
+                    if (Array.isArray(pyValue)) {
+                      // 已经是JavaScript数组，直接使用
+                      handler(pyValue);
+                    } else if (Sk.builtin.checkSequence(pyValue)) {
+                      // 是Python序列，需要转换
+                      const jsArray = [];
+                      const iterator = Sk.abstr.iter(pyValue);
+                      let item;
+                      while (
+                        (item = Sk.abstr.iternext(iterator, false)) !==
+                        undefined
+                      ) {
+                        jsArray.push(Sk.ffi.remapToJs(item));
+                      }
+                      handler(jsArray);
+                    } else {
+                      // 其他类型的值照常处理
+                      handler(Sk.ffi.remapToJs(pyValue));
+                    }
+                    positionApplied = true;
+                    break;
+                  }
+                  // // 如果jsKwa中没找到，但原始kwa存在这个属性
+                  // else if (kwa && kwa.entries && kwa.entries[posType]) {
+                  //   // 获取Python对象
+                  //   const pyValue = kwa.entries[posType].rhs;
+                  //   // 检查是否是Python元组或列表
+                  //   if (Sk.builtin.checkSequence(pyValue)) {
+                  //     // 正确转换为JavaScript数组
+                  //     const jsArray = [];
+                  //     const iterator = Sk.abstr.iter(pyValue);
+                  //     let item;
+                  //     while (
+                  //       (item = Sk.abstr.iternext(iterator, false)) !==
+                  //       undefined
+                  //     ) {
+                  //       jsArray.push(Sk.ffi.remapToJs(item));
+                  //     }
+                  //     handler(jsArray);
+                  //   } else {
+                  //     // 其他类型的值照常处理
+                  //     handler(Sk.ffi.remapToJs(pyValue));
+                  //   }
+                  //   positionApplied = true;
+                  //   break;
+                  // }
+                }
+
+                // 向后兼容：如果没有设置任何位置属性，则检查位置参数
+                if (!positionApplied && args.length > 2) {
+                  const pos = Sk.ffi.remapToJs(args[2]) || [];
+                  self.sprite.x = transX(pos[0] || 0);
+                  self.sprite.y = transY(pos[1] || 0);
+                } else if (!positionApplied) {
+                  // 默认位置为(0,0)
+                  self.sprite.x = transX(0);
+                  self.sprite.y = transY(0);
+                }
+
+                self.actorName = jsActorName;
+                resolve(void 0);
+              });
+            })
+          );
+        }, true)
+      );
       $loc.x = defineProperty(
         function (self) {
           return Sk.ffi.remapToPy(transX(self.sprite.x, true));
@@ -532,7 +736,6 @@ window.$builtinmodule = function () {
     function ($gbl, $loc) {
       $loc.__init__ = new Sk.builtin.func(
         genkwaFunc(function (args, oldkwa) {
-          // console.log(oldkwa)
           const kwa = Sk.ffi.remapToJs(oldkwa);
           let [self, actor, tween, duration, on_finished, targets] = args;
           tween = tween || kwa.tween || 'linear';
