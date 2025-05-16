@@ -563,6 +563,21 @@ window.$builtinmodule = function () {
           }
         });
         $loc.fill = new Sk.builtin.func(function (self, color) {
+          // 先确保尺寸已更新
+          if (Sk.globals && Sk.globals.WIDTH && Sk.globals.HEIGHT) {
+            const newWidth = Sk.ffi.remapToJs(Sk.globals.WIDTH);
+            const newHeight = Sk.ffi.remapToJs(Sk.globals.HEIGHT);
+
+            if (newWidth !== app.view.width || newHeight !== app.view.height) {
+              app.renderer.resize(newWidth, newHeight);
+              if (window.PyGameZero.container) {
+                window.PyGameZero.container.style.width = newWidth + 'px';
+                window.PyGameZero.container.style.height = newHeight + 'px';
+              }
+            }
+          }
+
+          // 然后执行填充
           graph.clear();
           graph.beginFill(transColor(Sk.ffi.remapToJs(color)), 1);
           graph.drawRect(0, 0, app.view.width, app.view.height);
