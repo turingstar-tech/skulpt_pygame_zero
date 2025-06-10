@@ -57,6 +57,8 @@ ModuleCache.App = new Application({
   height,
 });
 const app = ModuleCache.App;
+// 启用舞台的自动排序功能，使 zIndex 生效
+app.stage.sortableChildren = true;
 window.PyGameZero._onRunning(app);
 window.PyGameZero.container.appendChild(app.view);
 const { transX, transY, transPos, transColor } = translateTools(app);
@@ -74,11 +76,43 @@ window.$builtinmodule = function () {
           return new Sk.misceval.promiseToSuspension(
             new Promise(function (resolve) {
               const [self, actorName] = args;
-              const jsActorName = Sk.ffi.remapToJs(actorName);
+              let jsActorName = Sk.ffi.remapToJs(actorName);
               const jsKwa = Sk.ffi.remapToJs(kwa) || {};
-              textureRecources(jsActorName).then(function (texture) {
+
+              // 处理多帧图片：如果传入的是数组，保存所有帧并使用第一帧作为默认
+              if (Array.isArray(jsActorName)) {
+                self.frames = jsActorName; // 保存所有帧
+                jsActorName = jsActorName[0]; // 使用第一帧作为默认
+                self.currentFrame = 1; // 当前帧索引（从1开始，符合pygame zero惯例）
+              } else {
+                self.frames = [jsActorName]; // 单帧也保存为数组
+                self.currentFrame = 1;
+              }
+
+              // 使用与 blit 相同的纹理加载方式
+              let texture;
+              if (window.PIXI.utils.TextureCache[jsActorName]) {
+                texture = window.PIXI.utils.TextureCache[jsActorName];
+                createActor(texture);
+              } else {
+                texture = PIXI.Texture.from(jsActorName);
+                if (texture.baseTexture.valid) {
+                  createActor(texture);
+                } else {
+                  texture.baseTexture.on('loaded', () => {
+                    createActor(texture);
+                  });
+                  texture.baseTexture.on('error', () => {
+                    console.warn('Failed to load actor texture:', jsActorName);
+                    // 创建一个空的精灵作为占位符
+                    createActor(PIXI.Texture.EMPTY);
+                  });
+                }
+              }
+
+              function createActor(texture) {
                 const sprite = new Sprite(texture);
-                sprite.zOrder = 1;
+                sprite.zIndex = 1; // 确保角色在背景之上
                 self.sprite = sprite;
 
                 // 默认锚点为中心
@@ -261,8 +295,11 @@ window.$builtinmodule = function () {
                 }
 
                 self.actorName = jsActorName;
+                self._initialized = true; // 标记初始化完成
+                // 立即添加到舞台，确保 Actor 创建后立即可见
+                app.stage.addChild(self.sprite);
                 resolve(void 0);
-              });
+              }
             })
           );
         }, true)
@@ -317,20 +354,28 @@ window.$builtinmodule = function () {
       );
       $loc.frame = defineProperty(
         function (self) {
-          return Sk.ffi.remapToPy(self['sprite']['texture']);
+          return Sk.ffi.remapToPy(self.currentFrame || 1);
         },
         function (self, val) {
-          return new Sk.misceval.promiseToSuspension(
-            new Promise(function (resolve) {
-              textureRecources(
-                self.actorName[val.v - 1] ||
-                  `./assets/${self.actorName}/造型${val.v}.png`
-              ).then(function (texture) {
-                self['sprite']['texture'] = texture;
-                resolve(void 0);
-              });
-            })
-          );
+          const frameIndex = val.v;
+          if (
+            self.frames &&
+            frameIndex >= 1 &&
+            frameIndex <= self.frames.length
+          ) {
+            self.currentFrame = frameIndex;
+            const frameUrl = self.frames[frameIndex - 1]; // 数组索引从0开始，但frame从1开始
+
+            // 使用与初始化相同的纹理加载方式
+            let texture;
+            if (window.PIXI.utils.TextureCache[frameUrl]) {
+              texture = window.PIXI.utils.TextureCache[frameUrl];
+              self.sprite.texture = texture;
+            } else {
+              texture = PIXI.Texture.from(frameUrl);
+              self.sprite.texture = texture;
+            }
+          }
         }
       );
       $loc.distance_to = new Sk.builtin.func(function (self, pos) {
@@ -372,7 +417,14 @@ window.$builtinmodule = function () {
         app.stage.removeChild(self.sprite);
       });
       $loc.draw = new Sk.builtin.func(function (self) {
-        app.stage.addChild(self.sprite);
+        if (self._initialized && self.sprite) {
+          // 如果精灵不在舞台上，就重新添加到舞台
+          if (self.sprite.parent !== app.stage) {
+            app.stage.addChild(self.sprite);
+          }
+          // 强制触发舞台重新排序，确保 zIndex 生效
+          app.stage.sortChildren();
+        }
       });
     },
     'Actor'
@@ -583,6 +635,27 @@ window.$builtinmodule = function () {
           graph.drawRect(0, 0, app.view.width, app.view.height);
           graph.endFill();
           app.stage.addChild(graph);
+        });
+        $loc.blit = new Sk.builtin.func(function (self, image, pos) {
+          const imageSrc = Sk.ffi.remapToJs(image);
+          const position = transPos(Sk.ffi.remapToJs(pos));
+
+          // 立即创建精灵，不等待纹理加载完成
+          let texture;
+          if (window.PIXI.utils.TextureCache[imageSrc]) {
+            texture = window.PIXI.utils.TextureCache[imageSrc];
+          } else {
+            texture = PIXI.Texture.from(imageSrc);
+          }
+
+          const sprite = new Sprite(texture);
+          sprite.anchor.set(0, 0); // 左上角对齐，符合 pygame blit 的行为
+          sprite.x = transX(position[0]);
+          sprite.y = transY(position[1]);
+          sprite.zIndex = -1; // 使用 zIndex 确保背景在底层
+
+          // 立即添加到舞台，不等待异步加载
+          app.stage.addChild(sprite);
         });
       },
       'Screen',
